@@ -1,5 +1,12 @@
 <template>
 	<div id="app">
+		<div class="game-over" v-if="this.gameIsOver">
+			<span>The Game is Over</span>
+		</div>
+		<div class="game-in-progress" v-if="this.gameActive">
+			<span>The Game in Progress</span>
+		</div>
+
 		<div class="round">Round {{this.round}}</div>
 
 		<div class="game-board">
@@ -15,9 +22,12 @@
 				></div>
 			</div>
 			<div class="center-plate">
-				<div class="start-wrapper">
-					<div class="start-btn" @click="startGame">
+				<div class="control-wrapper">
+					<div v-if="!this.gameActive" class="btn btn-start" @click="startGame">
 						<span>start</span>
+					</div>
+					<div v-if="this.gameActive" class="btn btn-stop" @click="stopGame">
+						<span>stop</span>
 					</div>
 				</div>
 			</div>
@@ -33,22 +43,25 @@
 				></div>
 			</div>
 		</div>
-		<div class="game-control">
+		<div class="game-settings">
 			<div class="difficulty">
 				<p>Difficulty</p>
 				<label class="toggle easy">
 					<input type="radio" name="difficulty" value="1500"
 						v-model="difficulty"
+						:disabled="this.gameActive && this.difficulty != 1500"
 					>
 				</label>
 				<label class="toggle normal">
 					<input type="radio" name="difficulty" value="1000"
 						v-model="difficulty"
+						:disabled="this.gameActive && this.difficulty != 1000"
 					>
 				</label>
 				<label class="toggle hard">
 					<input type="radio" name="difficulty" value="400"
 						v-model="difficulty"
+						:disabled="this.gameActive && this.difficulty != 400"
 					>
 				</label>
 			</div>
@@ -63,13 +76,15 @@ export default {
 	data() {
 		return {
 			round: 0,
-			difficulty: 1500,
+			difficulty: 1000,
 			panelActive: false,
 			gameActive: false,
-			gameOver: false,
+			gameIsOver: false,
+
+			sequenceChecked: false,
 
 			sequence: [],
-			playerSequence: [],
+			sequenceToCheck: [],
 
 			greenClicked: false,
 			redClicked: false,
@@ -83,8 +98,9 @@ export default {
 	methods: {
 	
 		startGame() {
-			if (this.gameActive) this.gameActive = false
+			if (this.gameActive) return
 
+			this.gameIsOver = false
 			this.panelActive = true
 			this.gameActive = true
 			
@@ -92,13 +108,32 @@ export default {
 
 		},
 
-		newRound() {
-			this.round++
-			this.increaseSequence()
-			this.playSequence()
+		stopGame() {
+			this.sequence = []
+			this.sequenceToCheck = []
+			this.gameActive = false
+			this.panelActive = false
+			this.sequenceChecked = false
+			this.round = 0
 		},
 
-		
+		setGameOver() {
+			this.sequence = []
+			this.sequenceToCheck = []
+			this.gameActive = false
+			this.panelActive = false
+			this.sequenceChecked = false
+			this.round = 0
+			this.gameIsOver = true
+		},
+
+		newRound() {
+			this.sequenceChecked = false
+			this.round++
+			this.increaseSequence()
+			this.fillSequenceToCheck()
+			this.playSequence()
+		},
 
 		increaseSequence() {
 			this.sequence.push(this.getRandomNumber())
@@ -119,14 +154,41 @@ export default {
 			}, this.difficulty)
 		},
 
+		fillSequenceToCheck() {
+			this.sequenceToCheck = this.sequence.slice(0)
+		},
+
 		clickHandler(tileNum) {
 			if (!this.panelActive) return
 			this.activateTile(tileNum)
-			this.checkLose(tileNum)
+
+			let tileIsCorrect = this.checkCorrectTile(tileNum)
+
+			if (this.sequenceToCheck.length === 0) {
+				this.sequenceChecked = true
+			}
+
+			if (tileIsCorrect && this.sequenceChecked) {
+				setTimeout ( () => {
+					this.newRound()
+				}, 1500)
+			}
+
+			if (!tileIsCorrect) {
+				this.setGameOver()
+			}
+
 		},
 
-		checkLose() {
-			this.newRound()
+		checkCorrectTile(tileNum) {
+			let desiredResponse = this.sequenceToCheck.shift()
+
+			if (tileNum === desiredResponse) {
+				return true
+			} 
+			else {
+				return false
+			}			
 		},
 
 		activateTile(tileNum) {
@@ -140,37 +202,37 @@ export default {
 			this.greenClicked = true
 			setTimeout( () => {
 				this.greenClicked = false
-			}, 500)
+			}, this.getTimeFlashing())
 		},
 
 		activateRed() {
 			this.redClicked = true
 			setTimeout( () => {
 				this.redClicked = false
-			}, 500)
+			}, this.getTimeFlashing())
 		},
 
 		activateBlue() {
 			this.blueClicked = true
 			setTimeout( () => {
 				this.blueClicked = false
-			}, 500)
+			}, this.getTimeFlashing())
 		}, 
 
 		activateViolet() {
 			this.violetClicked = true
 			setTimeout( () => {
 				this.violetClicked = false
-			}, 500)
+			}, this.getTimeFlashing())
+		},
+
+		getTimeFlashing() {
+			return this.difficulty / 2
 		},
 
 		getRandomNumber() {
 			return Math.floor((Math.random()*4))
 		},
-
-		delay(ms) {
-  			return new Promise((resolve) => setTimeout(resolve, ms));
-		}
 	}
 }
 </script>
@@ -189,6 +251,25 @@ body {
 	text-align: center;
 	color: #bdbdbd;
 	margin-top: 100px;
+	position: relative;
+}
+
+.game-over {
+	position: absolute;
+	top: -50px;
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	color: rgb(209, 0, 0);
+}
+
+.game-in-progress {
+	position: absolute;
+	top: -50px;
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	color: rgb(5, 119, 5);
 }
 
 .round {
@@ -216,16 +297,15 @@ body {
 	left: 152px;
 	z-index: 100;
 
-	.start-wrapper {
+	.control-wrapper {
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		height: 100%;
 		width: 100%;
 
-		.start-btn {
+		.btn {
 			cursor: pointer;
-			background: rgb(25, 65, 61);
 			width: 4rem;
 			height: 2rem;
 			border-radius: 10px;
@@ -235,6 +315,14 @@ body {
 			display: flex;
 			justify-content: center;
 			align-items: center;
+		}
+
+		.btn-start {
+			background: rgb(25, 65, 61);
+		}
+
+		.btn-stop {
+			background: rgb(65, 27, 38);
 		}
 	}
 
@@ -273,7 +361,7 @@ body {
 	filter: brightness(1.5);
 }
 
-.game-control {
+.game-settings {
 	width: 10em;
 	height: 3.5em;
 	margin: 0 auto;
