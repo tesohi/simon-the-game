@@ -104,8 +104,6 @@ export default {
 	methods: {
 	
 		startGame() {
-			if (this.gameActive) return
-
 			this.gameIsOver = false
 			this.panelActive = true
 			this.gameActive = true
@@ -151,6 +149,8 @@ export default {
 			let i = 0
 			
 			let forSequence = setInterval( () => {
+				if (!this.gameActive || this.gameIsOver) clearInterval(forSequence)
+
 				this.activateTile(this.sequence[i])
 
 				i++
