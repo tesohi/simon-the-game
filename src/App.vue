@@ -4,7 +4,7 @@
 			<span>The Game is Over</span>
 		</div>
 		<div class="game-in-progress" v-if="this.gameActive">
-			<span>The Game in Progress</span>
+			<span>The Game is in Progress</span>
 		</div>
 
 		<div class="round">Round {{this.round}}</div>
@@ -70,6 +70,7 @@
 </template>
 
 <script>
+
 export default {
 	name: 'App',
 	components: {},
@@ -91,7 +92,12 @@ export default {
 			blueClicked: false,
 			violetClicked: false,
 
-
+			audios: [
+				new Audio(require('./audios/1.mp3')),
+				new Audio(require('./audios/2.mp3')),
+				new Audio(require('./audios/3.mp3')),
+				new Audio(require('./audios/4.mp3'))
+			]
 
 		}
 	},
@@ -140,6 +146,7 @@ export default {
 		},
 
 		playSequence() {
+			if (!this.gameActive || this.gameIsOver) return
 			this.panelActive = false
 			let i = 0
 			
@@ -192,10 +199,15 @@ export default {
 		},
 
 		activateTile(tileNum) {
+			this.playAudio(tileNum)
 			if (tileNum === 0) this.activateGreen()
 			else if (tileNum === 1) this.activateRed()
 			else if (tileNum === 2) this.activateBlue()
 			else if (tileNum === 3) this.activateViolet()
+		},
+
+		playAudio(tileNum) {
+			this.audios[tileNum].play()
 		},
 
 		activateGreen() {
