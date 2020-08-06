@@ -4,33 +4,31 @@
 
 		<div class="game-board">
 			<div class="board-top">
-				<div class="button button-top-left"
-					@click="green()"
+				<div class="tile tile-top-left"
+					@click="clickHandler(0)"
 					:class="{flash: this.greenClicked}"
 				></div>
 
-				<div class="button button-top-right"
-					@click="red()"
+				<div class="tile tile-top-right"
+					@click="clickHandler(1)"
 					:class="{flash: this.redClicked}"
 				></div>
 			</div>
 			<div class="center-plate">
-				<div class="toggle-start-wrapper">
-					<label>Start/Stop 
-						<input type="checkbox" 
-							v-model="gameON"
-						>
-					</label>
+				<div class="start-wrapper">
+					<div class="start-btn" @click="startGame">
+						<span>start</span>
+					</div>
 				</div>
 			</div>
 			<div class="board-bottom">
-				<div class="button button-bottom-left"
-					@click="blue()"
+				<div class="tile tile-bottom-left"
+					@click="clickHandler(2)"
 					:class="{flash: this.blueClicked}"
 				></div>
 				
-				<div class="button button-bottom-right"
-					@click="violet()"
+				<div class="tile tile-bottom-right"
+					@click="clickHandler(3)"
 					:class="{flash: this.violetClicked}"
 				></div>
 			</div>
@@ -59,80 +57,120 @@
 </template>
 
 <script>
-
-
 export default {
 	name: 'App',
 	components: {},
-	computed: {
-
-	},
 	data() {
 		return {
 			round: 0,
 			difficulty: 1500,
-			gameON: false,
+			panelActive: false,
+			gameActive: false,
+			gameOver: false,
+
+			sequence: [],
+			playerSequence: [],
 
 			greenClicked: false,
 			redClicked: false,
 			blueClicked: false,
 			violetClicked: false,
 
-			colorsDict: {
-				0: 'green',
-				1: 'red',
-				2: 'blue',
-				3: 'violet'
-			},
 
 
-			sequence: [],
-			playerSequence: [],
 		}
 	},
 	methods: {
-		green() {
-			if (!this.gameON) return
-			this.greenClicked = true
+	
+		startGame() {
+			if (this.gameActive) this.gameActive = false
 
+			this.panelActive = true
+			this.gameActive = true
 			
+			this.newRound()
 
-			setTimeout( f => {
+		},
+
+		newRound() {
+			this.round++
+			this.increaseSequence()
+			this.playSequence()
+		},
+
+		
+
+		increaseSequence() {
+			this.sequence.push(this.getRandomNumber())
+		},
+
+		playSequence() {
+			this.panelActive = false
+			let i = 0
+			
+			let forSequence = setInterval( () => {
+				this.activateTile(this.sequence[i])
+
+				i++
+				if (i >= this.sequence.length) {
+					clearInterval(forSequence)
+					this.panelActive = true
+				}
+			}, this.difficulty)
+		},
+
+		clickHandler(tileNum) {
+			if (!this.panelActive) return
+			this.activateTile(tileNum)
+			this.checkLose(tileNum)
+		},
+
+		checkLose() {
+			this.newRound()
+		},
+
+		activateTile(tileNum) {
+			if (tileNum === 0) this.activateGreen()
+			else if (tileNum === 1) this.activateRed()
+			else if (tileNum === 2) this.activateBlue()
+			else if (tileNum === 3) this.activateViolet()
+		},
+
+		activateGreen() {
+			this.greenClicked = true
+			setTimeout( () => {
 				this.greenClicked = false
 			}, 500)
 		},
-		red() {
-			if (!this.gameON) return
+
+		activateRed() {
 			this.redClicked = true
-
-
-
-
-			setTimeout( f => {
+			setTimeout( () => {
 				this.redClicked = false
 			}, 500)
 		},
-		blue() {
-			if (!this.gameON) return
+
+		activateBlue() {
 			this.blueClicked = true
-
-
-
-			setTimeout( f => {
+			setTimeout( () => {
 				this.blueClicked = false
 			}, 500)
-		},
-		violet() {
-			if (!this.gameON) return
+		}, 
+
+		activateViolet() {
 			this.violetClicked = true
-
-
-
-			setTimeout( f => {
+			setTimeout( () => {
 				this.violetClicked = false
 			}, 500)
 		},
 
+		getRandomNumber() {
+			return Math.floor((Math.random()*4))
+		},
+
+		delay(ms) {
+  			return new Promise((resolve) => setTimeout(resolve, ms));
+		}
 	}
 }
 </script>
@@ -178,21 +216,31 @@ body {
 	left: 152px;
 	z-index: 100;
 
-	.toggle-start-wrapper {
-		font-size: .8em;
-		height: 100%;
-		width: 100%;
+	.start-wrapper {
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		height: 100%;
+		width: 100%;
 
-		label {
+		.start-btn {
+			cursor: pointer;
+			background: rgb(25, 65, 61);
+			width: 4rem;
+			height: 2rem;
+			border-radius: 10px;
+			color: #bdbdbd;
+			font-size: 1.1rem;
 			user-select: none;
+			display: flex;
+			justify-content: center;
+			align-items: center;
 		}
 	}
+
 }
 
-.button {
+.tile {
 	display: inline-block;
 	width: 200px;
 	height: 200px;
@@ -204,19 +252,19 @@ body {
 	}
 }
 
-.button-top-left {
+.tile-top-left {
 	background: rgb(0, 112, 0);
 	border-top-left-radius: 100%;
 }
-.button-top-right {
+.tile-top-right {
 	background: rgb(167, 1, 1);
 	border-top-right-radius: 100%;
 }
-.button-bottom-left {
+.tile-bottom-left {
 	background: rgb(0, 0, 151);
 	border-bottom-left-radius: 100%;
 }
-.button-bottom-right {
+.tile-bottom-right {
 	background: rgb(87, 0, 128);
 	border-bottom-right-radius: 100%;
 }
